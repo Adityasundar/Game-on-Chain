@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Client, Wallet } from 'xrpl';
+import { Client } from 'xrpl';
 
 function App() {
   const [client, setClient] = useState(null);
@@ -11,14 +11,14 @@ function App() {
   
 
   const showAccountInfo = async () => {
-    const MY_SERVER = "ws://localhost:3000/";
+    const MY_SERVER = "wss://s.altnet.rippletest.net:51233";
     const client =  new Client(MY_SERVER);
     await client.connect();
 
-
-    const test_wallet =  Wallet.generate();
-
-
+      // Create a wallet and fund it with the Testnet faucet:
+    const fund_result = await client.fundWallet()
+    const test_wallet = fund_result.wallet
+    console.log(fund_result)
 
     const accountResponse = await client.request({
       "command": "account_info",
