@@ -3,7 +3,9 @@ import { useEffect } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import _ from "lodash";
 
+
 import * as states from "./recoil/atoms";
+
 
 import {
   allCoinState,
@@ -108,6 +110,85 @@ function Emulation() {
 
 function App() {
   const playersList = useRecoilValue(states.currentPlayersListState);
+
+  const xrpl = require("xrpl")
+  const cc = require('five-bells-condition')
+  const sha256 = require('js-sha256')
+
+  const createEscrow = async () => {
+    const client = new xrpl.Client('wss://s.altnet.rippletest.net:51233');
+    const wallet = await xrpl.Wallet.fromSeed("sEd7Tg5whs68dSuSCAg6pHbJ75E5GxQ");
+    const amount = 1000000
+    const preimageData = "player 1 wins";
+    const myFulfillment = new cc.PreimageSha256();
+    myFulfillment.setPreimage(sha256(preimageData));
+    const conditionHex = myFulfillment.getConditionBinary().toString('hex').toUpperCase();
+
+    let finishAfter = new Date((new Date().getTime() / 1000) + 120); // 2 minutes from now
+    finishAfter = new Date(finishAfter * 1000);
+
+    const escrowCreateTransaction = {
+      "TransactionType": "EscrowCreate",
+      "Account": "sEd7Tg5whs68dSuSCAg6pHbJ75E5GxQ",
+      "Destination": "sEdVwgLxdnLgvYk6n9JEDYjdyhSfAqB",
+      "Amount": amount, //drops XRP
+      "DestinationTag": 2023,
+      "Condition": conditionHex,
+      "Fee": "12",
+      "FinishAfter": xrpl.isoTimeToRippleTime(finishAfter.toISOString()),
+    };
+
+    xrpl.validate(escrowCreateTransaction);
+
+    const response  = await client.submitAndWait(escrowCreateTransaction, { wallet });
+
+  }
+
+  const finishEscrow = async () => {
+    const seed = "sEd7Tg5whs68dSuSCAg6pHbJ75E5GxQ"; // Test seed. Don't use
+    const offerSequence = null;
+    const condition = "";
+    const fulfillment = "";
+    try {
+      // Connect ----------------------------------------------------------------
+      const client = new xrpl.Client('wss://s.altnet.rippletest.net:51233');
+      await client.connect();
+  
+      // Prepare wallet to sign the transaction ---------------------------------
+      const wallet = await xrpl.Wallet.fromSeed(seed);
+      console.log("Wallet Address: ", wallet.address);
+      console.log("Seed: ", seed);
+  
+      if((!offerSequence)|| (condition === "" || fulfillment === "")){
+          throw new Error("Please specify the sequence number, condition and fulfillment of the escrow you created");
+      };
+  
+      const escrowFinishTransaction = {
+          "Account": wallet.address,
+          "TransactionType": "EscrowFinish",
+          "Owner": wallet.address,
+          // This should equal the sequence number of the escrow transaction
+          "OfferSequence": offerSequence,
+          // Crypto condition that must be met before escrow can be completed, passed on escrow creation
+          "Condition": condition,
+          // Fulfillment of the condition, passed on escrow creation
+          "Fulfillment": fulfillment,
+      };
+  
+      xrpl.validate(escrowFinishTransaction);
+  
+      // Sign and submit the transaction ----------------------------------------
+      console.log('Signing and submitting the transaction:', JSON.stringify(escrowFinishTransaction, null,  "\t"));
+      const response  = await client.submitAndWait(escrowFinishTransaction, { wallet });
+      console.log(`Finished submitting! ${JSON.stringify(response.result, null,  "\t")}`);
+  
+      await client.disconnect();
+  
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
     <div>
       <GameSetup />
@@ -146,6 +227,8 @@ function App() {
               <br />
             </div>
           ))}
+          <button onClick={createEscrow}>Create Escrow</button>
+          <button onClick={finishEscrow}>Finish Escrow</button>
         </div>
       </div>
     </div>
