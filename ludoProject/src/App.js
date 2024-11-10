@@ -5,11 +5,19 @@ import _ from "lodash";
 
 import * as states from "./recoil/atoms";
 
+import {
+  allCoinState,
+  currentDiceState,
+  currentPlayerState,
+  currentPlayersListState,
+} from "./recoil/atoms";
+
 import HomeCenter from "./components/homeCenter";
 import StepsGrid from "./components/stepsGrid";
 import HomeBox from "./components/homeBox";
 import GameSetup from "./components/gameSetup";
 import { colorMap, moves, playerOrder } from "./config/constants";
+import Walletinput from "./components/walletInput";
 
 function Emulation() {
   const [currentPlayer, setCurrentPlayer] = useRecoilState(
@@ -96,7 +104,10 @@ function Emulation() {
   );
 }
 
+
+
 function App() {
+  const playersList = useRecoilValue(states.currentPlayersListState);
   return (
     <div>
       <GameSetup />
@@ -127,7 +138,15 @@ function App() {
           </div>
         </div>
         <br />
-        {process.env.NODE_ENV === "development" && <Emulation />}
+        {/* {process.env.NODE_ENV === "development" && <Emulation />} */}
+        <div style={{marginTop: '50px'}}>
+          {playersList.map((player, i) => (
+            <div>
+              <Walletinput playerColour={player}/>
+              <br />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ function HomeBox({ parent }) {
   const currentPlayer = useRecoilValue(currentPlayerState);
   const playersList = useRecoilValue(currentPlayersListState);
 
+
   // const currentDiceNum = useRecoilValue(currentDiceState);
 
   return (
@@ -32,6 +33,7 @@ function HomeBox({ parent }) {
               )}
           </div>
         ))}
+
     </div>
   );
 }
